@@ -1,0 +1,227 @@
+=============App.js==============
+
+import * as React from 'react';
+import Lista from './components/Lista'
+import Navegacao from './components/Navegacao';
+import {NavigationContainer} from '@react-navigation/native';
+
+
+export default function App() {
+  return (
+    <NavigationContainer>
+      <Lista>
+        <Navegacao/>
+      </Lista>
+    </NavigationContainer>
+  );
+}
+
+=============components/Form.js==============
+
+import React, {useState, useContext} from 'react';
+import { StyleSheet, TextInput, Text, View, TouchableOpacity} from 'react-native';
+
+import {useNavigation} from '@react-navigation/native';
+import { ListaProdutos } from './Lista';
+
+export default function Formulario(){
+    const navigation = useNavigation();
+    const [inputCodigo, setInputCodigo] = useState('');
+    const [inputDescricao, setInputDescricao] = useState('');
+    const [inputPreco, setInputPreco] = useState('');
+    const [inputQuantidade, setInputQuantidade] = useState('');
+
+    const {produto} = useContext(ListaProdutos);
+    const {addProduto} = useContext(ListaProdutos);
+
+    function novoProduto(){
+        if(inputCodigo == '' || inputDescricao == '' || 
+        inputPreco == '' || inputQuantidade == ''){
+            alert('Todos os campos devem estar preenchidos');
+            return;
+        }
+         
+        addProduto(produto, inputCodigo, inputDescricao, inputPreco, inputQuantidade);
+
+        navigation.navigate('Home');
+    }
+
+    return(
+        <View style= {styles.container}>
+            <View style = {styles.cadastroProduto}>
+                <TextInput
+                    style={styles.entrada}
+                    placeholder='Código'
+                    keyboardType= 'numeric'
+                    value={inputCodigo}
+                    onChangeText={(text) => setInputCodigo(text)}/>           
+
+                <TextInput
+                    style={styles.entrada}
+                    placeholder='Descrição'
+                    value={inputDescricao}
+                    onChangeText={(text) => setInputDescricao(text)}/>
+
+                <TextInput
+                    style={styles.entrada}
+                    placeholder='Preço'
+                    keyboardType= 'numeric'
+                    value={inputPreco}
+                    onChangeText={(text) => setInputPreco(text)}/>
+
+                <TextInput
+                    style={styles.entrada}
+                    placeholder='Quantidade'
+                    keyboardType= 'numeric'
+                    value={inputQuantidade}
+                    onChangeText={(text) => setInputQuantidade(text)}/>
+
+                <TouchableOpacity
+                    style={styles.botao}
+                    onPress={novoProduto}>
+                        <Text style={styles.textoBotao}>Adicionar</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
+    );
+}
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 30,
+    },
+    cadastroProduto: {
+      width: '80%'
+    },entrada: {
+        alignItems: 'center',
+        textAlign: 'center',
+        borderWidth: 2,
+        marginBottom: 5,
+        fontSize: 20,
+    },botao: {
+        alignItems: 'center',
+        backgroundColor: 'orange',
+        padding: 10,
+        marginBottom: 5,
+        borderRadius: 20,
+        fontSize: 20,
+    },textoBotao: {
+        color: 'white',
+        fontWeight: 'bold',
+    }
+});
+
+=============components/Home.js==============
+
+import React, {useContext} from 'react';
+import { StyleSheet,  Text, View, TouchableOpacity, FlatList} from 'react-native';
+
+import {useNavigation} from '@react-navigation/native';
+import { ListaProdutos } from './Lista';
+
+export default function Home(){
+    const {produto} = useContext(ListaProdutos);
+    const navigation = useNavigation();
+
+    function detalhes(item){
+      alert('Produto '+'\n\n'+'Código: '+ item.codigo +'\n'+'Descrição: '+ item.descricao + '\n'+'Quantidade: '+ item.quantidade + '\n'+'Preço: '+ item.preco +'\n')
+    } 
+
+    return(
+        <View style={styles.container}>
+            <FlatList
+                style={styles.lista}
+                data={produto}
+                renderItem={({ item }) => (
+                    <Text style={styles.item}onPress={() => detalhes(item)}>{
+                        (item.codigo != '' && item.descricao != '')?'[' + item.codigo +'] - ' + item.descricao:''
+                    }</Text>
+                )}
+            />
+
+            <TouchableOpacity 
+            style= {styles.floatButton}
+            onPress={() => navigation.navigate('Formulario')}>
+                <Text style={styles.textoBotao}>+</Text>
+            </TouchableOpacity>
+        </View>
+    );
+}
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: 'white',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    floatButton: {
+        borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 70,
+        height: 70,
+        position: 'absolute',
+        bottom: 10,
+        right: 10,
+        backgroundColor: '#ffa500',
+        borderRadius: 100,
+    },
+    textoBotao: {
+        fontSize: 30,
+        color: 'white',
+    },
+    lista: {
+      width: '60%',
+    },
+    item: {
+        borderBottomWidth: 4,
+        borderRadius: 1,
+    }
+});
+
+=============components/Lista.js==============
+
+import React, {createContext} from 'react';
+
+export const ListaProdutos = createContext({});
+
+function addProduto(produto, inputCodigo, inputDescricao, inputPreco, inputQuantidade){
+    produto.push({codigo: inputCodigo, descricao: inputDescricao, 
+    preco: inputPreco, quantidade: inputQuantidade});
+}
+
+function Lista({children}){
+    return(
+        <ListaProdutos.Provider value = {
+                                {produto: [{codigo: '', descricao: '', preco: '', quantidade: ''}], addProduto}
+                            }>
+            {children}
+        </ListaProdutos.Provider>
+    );
+}
+
+export default Lista;
+
+=============components/Navegacao.js==============
+
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import React from 'react';
+
+import Formulario from './Form';
+import Home from './Home';
+
+const Stack = createNativeStackNavigator();
+
+function Navegacao(){
+    return(
+        <Stack.Navigator>
+            <Stack.Screen name='Home' component={Home}/>
+            <Stack.Screen name='Formulario' component={Formulario}/>
+        </Stack.Navigator>
+    );
+}
+export default Navegacao;
